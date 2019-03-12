@@ -35,7 +35,6 @@ def get_commits_for_org(org, startdate, enddate, username):
         commit_kwargs.update({'author': username})
     org_commits = []
     for repo in org.get_repos():
-    #for repo in [org.get_repo('hypernode-control')]:
         try:
             repo_commits = list(repo.get_commits(**commit_kwargs))
         except GithubException as e:
