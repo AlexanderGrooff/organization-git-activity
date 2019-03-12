@@ -8,3 +8,8 @@ cd organization-git-activity
 mkvirtualenv organization-git-activity -a .
 pip install -r requirements.txt
 ```
+
+Once you've got it set up, you can find commits by running a command like the following:
+```
+GITHUB_ACCESS_TOKEN="some-api-token" ./main.py ByteInternet -u "AlexanderGrooff"
+```
