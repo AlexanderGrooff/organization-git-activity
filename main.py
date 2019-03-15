@@ -53,7 +53,7 @@ def pprint_commits(commits):
     sorted_commits = sorted(commits, key=lambda c: c.commit.author.date)
     for c in sorted_commits:
         print("{date} {author:>20}: {msg}".format(
-            date=c.commit.author.date.strftime("%Y-%m-%d"),
+            date=c.commit.author.date.strftime("%Y-%m-%d(%a)"),
             author=c.commit.author.name,
             msg=clip_long_text(c.commit.message.strip().replace("\n", " "))
         ))
