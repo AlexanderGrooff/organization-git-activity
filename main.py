@@ -14,8 +14,8 @@ def valid_date_arg(date_str):
 
 def get_args():
     parser = ArgumentParser(description="Retrieve all commits from the given Github organization")
-    parser.add_argument("organization", help="Name of the Github organization")
-    parser.add_argument("-u", "--username", help="Username to filter on")
+    parser.add_argument("-o", "--organization", help="Name of the Github organization", default=os.environ.get("GH_ORGANIZATION"))
+    parser.add_argument("-u", "--username", help="Username to filter on", default=os.environ.get("GH_USERNAME"))
     parser.add_argument("-s", "--startdate", type=valid_date_arg,
                         help="Date from which to look for", default=datetime.today() - timedelta(days=7))
     parser.add_argument("-e", "--enddate", type=valid_date_arg,
@@ -34,14 +34,27 @@ def get_commits_for_org(org, startdate, enddate, username):
     if username:
         commit_kwargs.update({'author': username})
     org_commits = []
-    for repo in org.get_repos():
-        try:
-            repo_commits = list(repo.get_commits(**commit_kwargs))
-        except GithubException as e:
-            print("Got error for repo {}: {}".format(repo.name, e))
-            continue
-        print("Found {} commits in repo {}".format(len(repo_commits), repo.name))
-        org_commits.extend(repo_commits)
+
+    print(f"Looking for repos in organization {org}")
+    repos = list(org.get_repos())
+
+    print(f"Checking for commits from {username} in {len(repos)} repos, ordered by last updated repos")
+    print("You can interrupt at any moment to print results found so far")
+    print()
+    try:
+        # Start with newest repos first
+        for repo in reversed(repos):
+            try:
+                repo_commits = list(repo.get_commits(**commit_kwargs))
+            except GithubException as e:
+                print("Got error for repo {}: {}".format(repo.name, e))
+                continue
+            print("Found {} commits in repo {}".format(len(repo_commits), repo.name))
+            org_commits.extend(repo_commits)
+    except KeyboardInterrupt:
+        print("Interrupted. Returning results found so far")
+
+    print()
     return org_commits
 
 
