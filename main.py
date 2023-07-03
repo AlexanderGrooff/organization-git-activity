@@ -5,7 +5,16 @@ from argparse import ArgumentParser
 from github import Github, GithubException
 
 
-TEXT_LIMIT = 140
+TEXT_LIMIT = os.environ.get("TEXT_LIMIT", 140)
+if os.environ.get("START_MONTH"):
+    year = datetime.now().year
+    DEFAULT_START_DATE = datetime(year=year, month=int(os.environ["START_MONTH"]), day=1)
+    DEFAULT_END_DATE = datetime(year=year, month=int(os.environ["END_MONTH"]), day=1)
+    if DEFAULT_END_DATE < DEFAULT_START_DATE:
+        DEFAULT_START_DATE = DEFAULT_START_DATE.replace(year=year-1)
+else:
+    DEFAULT_START_DATE = os.environ.get("START_DATE", datetime.today() - timedelta(days=7))
+    DEFAULT_END_DATE = os.environ.get("END_DATE", datetime.today())
 
 
 def valid_date_arg(date_str):
@@ -17,9 +26,9 @@ def get_args():
     parser.add_argument("-o", "--organization", help="Name of the Github organization", default=os.environ.get("GH_ORGANIZATION"))
     parser.add_argument("-u", "--username", help="Username to filter on", default=os.environ.get("GH_USERNAME"))
     parser.add_argument("-s", "--startdate", type=valid_date_arg,
-                        help="Date from which to look for", default=datetime.today() - timedelta(days=7))
+                        help="Date from which to look for", default=DEFAULT_START_DATE)
     parser.add_argument("-e", "--enddate", type=valid_date_arg,
-                        help="Date until which to look for", default=datetime.today())
+                        help="Date until which to look for", default=DEFAULT_END_DATE)
     return parser.parse_args()
 
 
