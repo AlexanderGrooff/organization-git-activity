@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import json
 import os
 from datetime import datetime, timedelta
 from argparse import ArgumentParser
@@ -121,24 +122,30 @@ def clip_long_text(s):
 
 def pprint_commits(commits: List[Commit]):
     sorted_commits = sorted(commits, key=lambda c: c.commit.author.date)
+    labels_per_day = {}
     for c in sorted_commits:
+        commit_date = c.commit.author.date.strftime("%Y-%m-%d(%a)")
+        msg_kwargs = {
+            "date": commit_date,
+            "author": c.commit.author.name,
+            "msg": clip_long_text(c.commit.message.strip().replace("\n", " ")),
+        }
+        labels_per_day.setdefault(commit_date, {})
         if pr := get_pr_for_commit(c):
             print(
                 "{date} {author:>20} [{labels}]: {msg}".format(
-                    date=c.commit.author.date.strftime("%Y-%m-%d(%a)"),
-                    author=c.commit.author.name,
-                    labels=",".join([l.name for l in pr.labels]),
-                    msg=clip_long_text(c.commit.message.strip().replace("\n", " ")),
+                    labels=",".join(sorted([l.name for l in pr.labels])), **msg_kwargs
                 )
             )
+            for label in pr.labels:
+                labels_per_day[commit_date][label.name] = (
+                    labels_per_day[commit_date][label.name] + 1
+                    if label.name in labels_per_day[commit_date]
+                    else 1
+                )
         else:
-            print(
-                "{date} {author:>20}: {msg}".format(
-                    date=c.commit.author.date.strftime("%Y-%m-%d(%a)"),
-                    author=c.commit.author.name,
-                    msg=clip_long_text(c.commit.message.strip().replace("\n", " ")),
-                )
-            )
+            print("{date} {author:>20}: {msg}".format(**msg_kwargs))
+    print(f"Labels per day: {json.dumps(labels_per_day, indent=2)}")
 
 
 def pprint_prs(prs, label_pattern=None):
